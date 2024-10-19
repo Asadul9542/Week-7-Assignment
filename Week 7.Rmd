@@ -1,0 +1,155 @@
+---
+title: "Week 7 Assignment"
+author: "Md Asadul Islam"
+date: "`r Sys.Date()`"
+output: openintro::lab_report
+---
+
+```{r load-packages, message=FALSE}
+library(tibble)
+library(jsonlite)
+library(XML)
+library(arrow)
+library(htmlTable)
+```
+
+### Create the data and display it in a dataframe
+Here, I key in the data and then create a dataframe.
+
+```{r code-chunk-label for creating the data}
+# Create the data frame
+mart_data <- tibble::tribble(
+  ~Category, ~Item_Name, ~Item_ID, ~Brand, ~Price, ~Variation_ID, ~Variation_Details,
+  "Electronics", "Smartphone", 101, "TechBrand", 699.99, "101-A", "Color: Black, Storage: 64GB",
+  "Electronics", "Smartphone", 101, "TechBrand", 699.99, "101-B", "Color: White, Storage: 128GB",
+  "Electronics", "Laptop", 102, "CompuBrand", 1099.99, "102-A", "Color: Silver, Storage: 256GB",
+  "Electronics", "Laptop", 102, "CompuBrand", 1099.99, "102-B", "Color: Space Gray, Storage: 512GB",
+  "Home Appliances", "Refrigerator", 201, "HomeCool", 899.99, "201-A", "Color: Stainless Steel, Capacity: 20 cu ft",
+  "Home Appliances", "Refrigerator", 201, "HomeCool", 899.99, "201-B", "Color: White, Capacity: 18 cu ft",
+  "Home Appliances", "Washing Machine", 202, "CleanTech", 499.99, "202-A", "Type: Front Load, Capacity: 4.5 cu ft",
+  "Home Appliances", "Washing Machine", 202, "CleanTech", 499.99, "202-B", "Type: Top Load, Capacity: 5.0 cu ft",
+  "Clothing", "T-Shirt", 301, "FashionCo", 19.99, "301-A", "Color: Blue, Size: S",
+  "Clothing", "T-Shirt", 301, "FashionCo", 19.99, "301-B", "Color: Red, Size: M",
+  "Clothing", "T-Shirt", 301, "FashionCo", 19.99, "301-C", "Color: Green, Size: L",
+  "Clothing", "Jeans", 302, "DenimWorks", 49.99, "302-A", "Color: Dark Blue, Size: 32",
+  "Clothing", "Jeans", 302, "DenimWorks", 49.99, "302-B", "Color: Light Blue, Size: 34",
+  "Books", "Fiction Novel", 401, "-", 14.99, "401-A", "Format: Hardcover, Language: English",
+  "Books", "Fiction Novel", 401, "-", 14.99, "401-B", "Format: Paperback, Language: Spanish",
+  "Books", "Non-Fiction Guide", 402, "-", 24.99, "402-A", "Format: eBook, Language: English",
+  "Books", "Non-Fiction Guide", 402, "-", 24.99, "402-B", "Format: Paperback, Language: French",
+  "Sports Equipment", "Basketball", 501, "SportsGear", 29.99, "501-A", "Size: Size 7, Color: Orange",
+  "Sports Equipment", "Tennis Racket", 502, "RacketPro", 89.99, "502-A", "Material: Graphite, Color: Black",
+  "Sports Equipment", "Tennis Racket", 502, "RacketPro", 89.99, "502-B", "Material: Aluminum, Color: Silver"
+)
+
+print(mart_data)
+
+```
+
+### Convert the dataset to JSON
+
+```{r code chunk label for converting data to JSON}
+# Converting the keyed to JSON
+json_mart_data <- toJSON(mart_data, pretty = TRUE)
+json_mart_data
+write(json_mart_data, file = "json_data_file.json")
+
+# Reading JSON back into R
+json_mart_datafile <- fromJSON("C:\\Users\\HP\\Documents\\R projects\\Week 7\\json_data_file.json")
+print(json_mart_datafile)
+```
+### Pros of JSON
+1. Human-readable and easy to write.
+2. Widely used for web APIs and configuration files.
+3. Can be easily parsed and generated in R.
+### Cons of JSON
+1. Can be inefficient in terms of storage space for very large datasets.
+2. Limited support for complex data types compared to some other formats.
+
+### Convert the dataset to HTML
+
+```{r code chunk for convert to html}
+# Convert to HTML
+html_data <- htmlTable::htmlTable(mart_data)
+write(html_data, file = "html_data_file.html")
+cat(html_data)
+
+# Read HTML back into R
+library(rvest)
+html_content <- read_html("html_data_file.html")
+imported_html_data <- html_content %>% html_table(fill = TRUE) %>% .[[1]]
+print(imported_html_data)
+
+```
+
+### Pros of HTML
+1. Easily viewed in web browsers.
+2. Can be styled using CSS for better presentation.
+3. Interactive features can be added using JavaScript.
+### Cons of HTML
+Not ideal for large datasets due to lack of efficient data handling.
+More complex to parse and manipulate compared to other data formats.
+### Convert the dataset to XML
+
+```{r code chunk for converting to XML}
+
+# Convert to XML
+xml_data <- XML::newXMLNode("Inventory")
+for (i in 1:nrow(mart_data)) {
+  item <- XML::newXMLNode("Item", parent = xml_data)
+  for (j in 1:ncol(mart_data)) {
+    XML::newXMLNode(names(mart_data)[j], mart_data[i, j], parent = item)
+  }
+}
+XML::saveXML(xml_data, file = "xml_data_file.xml")
+
+# Print the raw XML content to verify
+cat(XML::saveXML(xml_data))
+
+# Read XML back into R
+read_xml_data <- XML::xmlParse("C:\\Users\\HP\\Documents\\R projects\\Week 7\\xml_data_file.xml")
+
+# Convert the XML back to a dataframe for verification
+xml_root <- XML::xmlRoot(read_xml_data)
+xml_to_df <- xmlToDataFrame(xml_root)
+
+# Print the dataframe to verify
+print(xml_to_df)
+
+
+```
+### Pros of XML
+
+1. Highly structured and supports complex data hierarchies.
+2. Widely used in web services and for data interchange.
+3. Can be validated using schemas.
+
+### Cons of XML
+
+1. Verbose can be difficult to read.
+2. Larger file size compared to JSON for similar data.
+
+### Convert the dataset to Parquet
+
+```{r code chunk for converting to parquet}
+# Convert to Parquet
+arrow::write_parquet(mart_data, "parquet_data_file.parquet")
+
+# Read Parquet back into R
+imported_parquet_data <- arrow::read_parquet("C:\\Users\\HP\\Documents\\R projects\\Week 7\\parquet_data_file.parquet")
+
+print(imported_parquet_data)
+
+
+```
+
+### Pros of Parquet
+
+1. Highly efficient in terms of storage and retrieval for large datasets.
+2. It is columnar storage format, making it ideal for analytical queries.
+3. It is supported by many big data tools and frameworks.
+
+### Cons of Parquet
+
+1. Less human-readable compared to JSON and XML formats.
+2. Requires specific libraries and tools to read and write.
